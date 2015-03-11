@@ -20,8 +20,7 @@ Main::Run() {
     int returnCode = 0;
     this->ValidateArgs();
     if (!this->error.empty()) {
-        std::cerr << this->error << std::endl;
-        this->showHelp = true;
+        this->PrintError(this->error);
         returnCode = 5;
     }
     if (this->showVersion) {
@@ -31,8 +30,15 @@ Main::Run() {
         this->ShowHelp();
     }
     else {
-        // FIXME
-        returnCode = 10;
+        // setup the FBX SDK
+        if (this->fbx.Setup()) {
+        
+            this->fbx.Discard();
+        }
+        else {
+            this->PrintError(this->fbx.Error());
+            returnCode = 10;
+        }
     }
     return returnCode;
 }
@@ -54,6 +60,12 @@ Main::ShowHelp() {
         "--fbx          FBX file path (input)\n"
         "--rules        rules file path (input)\n"
         "--output       output file(s) path\n\n";
+}
+
+//------------------------------------------------------------------------------
+void
+Main::PrintError(const std::string& err) {
+    std::cerr << err << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -116,10 +128,4 @@ Main::ValidateArgs() {
 }
 
 } // namespace FBXC
-
-//------------------------------------------------------------------------------
-int main(int argc, const char** argv) {
-    FBXC::Main app(argc, argv);
-    return app.Run();
-}
 

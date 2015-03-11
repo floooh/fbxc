@@ -5,6 +5,7 @@
     @brief fbxc main class
 */
 #include <string>
+#include "FBX.h"
 
 namespace FBXC {
 class Main {
@@ -23,6 +24,8 @@ private:
     void ShowVersion();
     /// display help
     void ShowHelp();
+    /// print current error string
+    void PrintError(const std::string& err);
 
     bool showHelp = false;
     bool showVersion = false;
@@ -30,5 +33,6 @@ private:
     std::string fbxPath;
     std::string rulesPath;
     std::string outputPath;
+    FBX fbx;
 };
 } // namespace FBXC
