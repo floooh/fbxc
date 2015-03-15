@@ -13,7 +13,7 @@ public:
     /// setup from cmd line args
     Main(int argc, const char** argv);
     /// run the app
-    int Run();
+    void Run();
     
 private:
     /// parse cmd line args
@@ -24,12 +24,10 @@ private:
     void ShowVersion();
     /// display help
     void ShowHelp();
-    /// print current error string
-    void PrintError(const std::string& err);
 
     bool showHelp = false;
     bool showVersion = false;
-    std::string error;
+    bool dumpFbx = false;
     std::string fbxPath;
     std::string rulesPath;
     std::string outputPath;

@@ -17,21 +17,23 @@ public:
     ~FBX();
     
     /// setup the FBX SDK
-    bool Setup();
+    void Setup();
     /// discard everything
     void Discard();
     /// return true if object has been setup
     bool IsValid() const;
-    /// get last error
-    const std::string& Error() const;
     
     /// load an FBX file
-    bool Load(const std::string& path);
+    void Load(const std::string& path);
+    /// dump the FBX scene structure
+    void Dump();
+    
     
 private:
     bool isValid;
-    std::string error;
+    std::string filePath;
     FbxManager* fbxManager = nullptr;
+    FbxIOSettings* fbxIoSettings = nullptr;
     FbxScene* fbxScene = nullptr;
 };
 
@@ -39,12 +41,6 @@ private:
 inline bool
 FBX::IsValid() const {
     return this->isValid;
-}
-
-//------------------------------------------------------------------------------
-inline const std::string&
-FBX::Error() const {
-    return this->error;
 }
 
 } // namespace FBXC

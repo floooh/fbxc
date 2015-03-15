@@ -2,6 +2,7 @@
 //  Main.cc
 //------------------------------------------------------------------------------
 #include "Main.h"
+#include "Log.h"
 #include <iostream>
 
 namespace FBXC {
@@ -15,14 +16,9 @@ Main::Main(int argc, const char** argv) {
 }
 
 //------------------------------------------------------------------------------
-int
+void
 Main::Run() {
-    int returnCode = 0;
     this->ValidateArgs();
-    if (!this->error.empty()) {
-        this->PrintError(this->error);
-        returnCode = 5;
-    }
     if (this->showVersion) {
         this->ShowVersion();
     }
@@ -30,42 +26,34 @@ Main::Run() {
         this->ShowHelp();
     }
     else {
-        // setup the FBX SDK
-        if (this->fbx.Setup()) {
-        
-            this->fbx.Discard();
+        this->fbx.Setup();
+        this->fbx.Load(this->fbxPath);
+        if (this->dumpFbx) {
+            this->fbx.Dump();
         }
-        else {
-            this->PrintError(this->fbx.Error());
-            returnCode = 10;
-        }
+        this->fbx.Discard();
     }
-    return returnCode;
 }
 
 //------------------------------------------------------------------------------
 void
 Main::ShowVersion() {
-    std::cout << "fbxc " << Version << std::endl;
+    Log::Info("fbxc %s\n", Version);
 }
 
 //------------------------------------------------------------------------------
 void
 Main::ShowHelp() {
-    std::cout <<
+    Log::Info(
         "fbxc [--version] [--help] [--fbx path] [--rules path] [--output path]\n"
         "source and docs: https://github.com/floooh/fbxc\n\n"
-        "--version      show version information\n"
-        "--help         show this help text\n"
-        "--fbx          FBX file path (input)\n"
-        "--rules        rules file path (input)\n"
-        "--output       output file(s) path\n\n";
-}
-
-//------------------------------------------------------------------------------
-void
-Main::PrintError(const std::string& err) {
-    std::cerr << err << std::endl;
+        "--version:         show version information\n"
+        "--help:            show this help text\n"
+        "--fbx path:        FBX file path (input)\n"
+        "--rules path:      rules file path (input)\n"
+        "--output path:     output file(s) path\n"
+        "--fbx-dump:        dump FBX scene structure to stdout\n\n"
+    );
 }
 
 //------------------------------------------------------------------------------
@@ -84,7 +72,7 @@ Main::ParseArgs(int argc, const char** argv) {
                 this->fbxPath = argv[i];
             }
             else {
-                this->error = "expected fbx file path after '--fbx'";
+                Log::Fatal("expected fbx file path after '--fbx\n");
             }
         }
         else if (arg == "--rules") {
@@ -92,7 +80,7 @@ Main::ParseArgs(int argc, const char** argv) {
                 this->rulesPath = argv[i];
             }
             else {
-                this->error = "expected rules file path after '--rules'";
+                Log::Fatal("expected rules file path after '--rules'\n");
             }
         }
         else if (arg == "--output") {
@@ -100,11 +88,14 @@ Main::ParseArgs(int argc, const char** argv) {
                 this->outputPath = argv[i];
             }
             else {
-                this->error = "expected output file path after '--output'";
+                Log::Fatal("expected output file path after '--output'\n");
             }
         }
+        else if (arg == "--fbx-dump") {
+            this->dumpFbx = true;
+        }
         else {
-            this->error = std::string("unknown cmdline arg: ") + argv[i];
+            Log::Fatal("unknown cmdline arg: %s\n", argv[i]);
         }
     }
 }
@@ -112,17 +103,16 @@ Main::ParseArgs(int argc, const char** argv) {
 //------------------------------------------------------------------------------
 void
 Main::ValidateArgs() {
-    if (this->error.empty()) {
-        if (!(this->showHelp || this->showVersion)) {
-            if (this->fbxPath.empty()) {
-                this->error = "--fbx arg missing";
-            }
-            else if (this->rulesPath.empty()) {
-                this->error = "--rules arg missing";
-            }
-            else if (this->outputPath.empty()) {
-                this->error = "--output arg missing";
-            }
+    if (!(this->showHelp || this->showVersion)) {
+        if (this->fbxPath.empty()) {
+            Log::Fatal("--fbx arg required\n");
+        }
+        else if (!this->dumpFbx && this->rulesPath.empty()) {
+            Log::Fatal("--rules arg missing\n");
+            
+        }
+        else if (!this->dumpFbx && this->outputPath.empty()) {
+            Log::Fatal("--output arg missing\n");
         }
     }
 }
