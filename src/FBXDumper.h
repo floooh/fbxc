@@ -17,8 +17,10 @@ public:
 private:
     /// dump file meta
     static void DumpMetaData(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
-    /// dump scene hierarchy
-    static void DumpHierarchy(FbxManager* fbxManager, FbxScene* fbxScene, FbxNode* fbxNode, cJSON* json);
+    /// dump materials
+    static void DumpMaterials(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
+    /// dump node hierarcht
+    static void DumpHierarchy(FbxManager* fbxManager, FbxScene* fbxScene, FbxNode* fbxNode, cJSON* jsonNode);
 };
 
 } // namespace FBXC
