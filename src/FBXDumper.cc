@@ -15,8 +15,10 @@ FBXDumper::Dump(FbxManager* fbxManager, FbxScene* fbxScene, const std::string& f
     cJSON* root = cJSON_CreateObject();
     cJSON_AddItemToObject(root, "file", cJSON_CreateString(fbxPath.c_str()));
     DumpMetaData(fbxManager, fbxScene, root);
+    DumpTextures(fbxManager, fbxScene, root);
     DumpMaterials(fbxManager, fbxScene, root);
     DumpHierarchy(fbxManager, fbxScene, nullptr, root);
+    DumpConnections(fbxManager, fbxScene, root);
     char* str = cJSON_Print(root);
     Log::Info(str);
     Log::Info("\n\n");
@@ -43,6 +45,148 @@ FBXDumper::DumpMetaData(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* root)
     cJSON_AddItemToObject(meta, "comment", cJSON_CreateString(info->mComment.Buffer()));
     
     cJSON_AddItemToObject(root, "meta-data", meta);
+}
+
+//------------------------------------------------------------------------------
+void
+FBXDumper::DumpTextures(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* jsonNode) {
+    assert(fbxManager && fbxScene && jsonNode);
+    
+    // add textures json node
+    cJSON* jsonTexArray = cJSON_CreateArray();
+    cJSON_AddItemToObject(jsonNode, "textures", jsonTexArray);
+    
+    // loop over textures
+    const int numTextures = fbxScene->GetTextureCount();
+    for (int texIndex = 0; texIndex < numTextures; texIndex++) {
+        FbxTexture* fbxTex = fbxScene->GetTexture(texIndex);
+        
+        cJSON* jsonTexNode = cJSON_CreateObject();
+        cJSON_AddItemToArray(jsonTexArray, jsonTexNode);
+        
+        cJSON_AddItemToObject(jsonTexNode, "name", cJSON_CreateString(fbxTex->GetName()));
+        const char* type = "invalid";
+        if (fbxTex->GetClassId().Is(FbxFileTexture::ClassId)) {
+            FbxFileTexture* fbxFileTex = (FbxFileTexture*) fbxTex;
+            type = "file";
+            cJSON_AddItemToObject(jsonTexNode, "usematerial", cJSON_CreateBool(fbxFileTex->UseMaterial.Get()));
+            cJSON_AddItemToObject(jsonTexNode, "usemipmap", cJSON_CreateBool(fbxFileTex->UseMipMap.Get()));
+            cJSON_AddItemToObject(jsonTexNode, "filename", cJSON_CreateString(fbxFileTex->GetRelativeFileName()));
+            static std::map<FbxFileTexture::EMaterialUse, const char*> matUseToStr = {
+                { FbxFileTexture::eModelMaterial, "model" },
+                { FbxFileTexture::eDefaultMaterial, "default" }
+            };
+            const FbxFileTexture::EMaterialUse matUse = fbxFileTex->GetMaterialUse();
+            const char* matUseStr = "invalid";
+            if (matUseToStr.find(matUse) != matUseToStr.end()) {
+                matUseStr = matUseToStr[matUse];
+            }
+            cJSON_AddItemToObject(jsonTexNode, "materialuse", cJSON_CreateString(matUseStr));
+            
+        }
+        else if (fbxTex->GetClassId().Is(FbxProceduralTexture::ClassId)) {
+            type = "procedural";
+        }
+        cJSON_AddItemToObject(jsonTexNode, "type", cJSON_CreateString(type));
+        cJSON_AddItemToObject(jsonTexNode, "swapuv", cJSON_CreateBool(fbxTex->GetSwapUV()));
+        cJSON_AddItemToObject(jsonTexNode, "premultiplyalpha", cJSON_CreateBool(fbxTex->GetPremultiplyAlpha()));
+        static std::map<FbxTexture::EAlphaSource, const char*> alphaSourceToStr = {
+            { FbxTexture::eNone, "none" },
+            { FbxTexture::eRGBIntensity, "rgbintensity" },
+            { FbxTexture::eBlack, "black" }
+        };
+        const FbxTexture::EAlphaSource alphaSource = fbxTex->GetAlphaSource();
+        const char* alphaSourceStr = "invalid";
+        if (alphaSourceToStr.find(alphaSource) != alphaSourceToStr.end()) {
+            alphaSourceStr = alphaSourceToStr[alphaSource];
+        }
+        cJSON_AddItemToObject(jsonTexNode, "alphasource", cJSON_CreateString(alphaSourceStr));
+        int cropping[4] = {
+            fbxTex->GetCroppingLeft(),
+            fbxTex->GetCroppingTop(),
+            fbxTex->GetCroppingRight(),
+            fbxTex->GetCroppingBottom()
+        };
+        cJSON_AddItemToObject(jsonTexNode, "cropping", cJSON_CreateIntArray(cropping, 4));
+        static std::map<FbxTexture::EMappingType, const char*> mappingTypeToStr = {
+            { FbxTexture::eNull, "null" },
+            { FbxTexture::ePlanar, "planar" },
+            { FbxTexture::eSpherical, "spherical" },
+            { FbxTexture::eCylindrical, "cylindrical" },
+            { FbxTexture::eBox, "box" },
+            { FbxTexture::eFace, "face" },
+            { FbxTexture::eUV, "uv" },
+            { FbxTexture::eEnvironment, "environment" }
+        };
+        const FbxTexture::EMappingType mappingType = fbxTex->GetMappingType();
+        const char* mappingTypeStr = "invalid";
+        if (mappingTypeToStr.find(mappingType) != mappingTypeToStr.end()) {
+            mappingTypeStr = mappingTypeToStr[mappingType];
+        }
+        cJSON_AddItemToObject(jsonTexNode, "mappingtype", cJSON_CreateString(mappingTypeStr));
+        static std::map<FbxTexture::EPlanarMappingNormal, const char*> pmnToStr = {
+            { FbxTexture::ePlanarNormalX, "x" },
+            { FbxTexture::ePlanarNormalY, "y" },
+            { FbxTexture::ePlanarNormalZ, "z" }
+        };
+        const FbxTexture::EPlanarMappingNormal pmn = fbxTex->GetPlanarMappingNormal();
+        const char* pmnStr = "invalid";
+        if (pmnToStr.find(pmn) != pmnToStr.end()) {
+            pmnStr = pmnToStr[pmn];
+        }
+        cJSON_AddItemToObject(jsonTexNode, "planarmappingnormal", cJSON_CreateString(pmnStr));
+        static std::map<FbxTexture::ETextureUse, const char*> texUseToStr = {
+            { FbxTexture::eStandard, "standard" },
+            { FbxTexture::eShadowMap, "shadowmap" },
+            { FbxTexture::eLightMap, "lightmap" },
+            { FbxTexture::eSphericalReflectionMap, "sphericalreflectionmap" },
+            { FbxTexture::eSphereReflectionMap, "spherereflectionmap" },
+            { FbxTexture::eBumpNormalMap, "bumpnormalmap" }
+        };
+        const FbxTexture::ETextureUse texUse = fbxTex->GetTextureUse();
+        const char* texUseStr = "invalid";
+        if (texUseToStr.find(texUse) != texUseToStr.end()) {
+            texUseStr = texUseToStr[texUse];
+        }
+        cJSON_AddItemToObject(jsonTexNode, "textureuse", cJSON_CreateString(texUseStr));
+        static std::map<FbxTexture::EWrapMode, const char*> wrapModeToStr = {
+            { FbxTexture::eRepeat, "repeat" },
+            { FbxTexture::eClamp, "clamp" }
+        };
+        const FbxTexture::EWrapMode wrapModeU = fbxTex->GetWrapModeU();
+        const FbxTexture::EWrapMode wrapModeV = fbxTex->GetWrapModeV();
+        const char* wrapModeUStr = "invalid";
+        const char* wrapModeVStr = "invalid";
+        if (wrapModeToStr.find(wrapModeU) != wrapModeToStr.end()) {
+            wrapModeUStr = wrapModeToStr[wrapModeU];
+        }
+        if (wrapModeToStr.find(wrapModeV) != wrapModeToStr.end()) {
+            wrapModeVStr = wrapModeToStr[wrapModeV];
+        }
+        cJSON_AddItemToObject(jsonTexNode, "wrapmodeu", cJSON_CreateString(wrapModeUStr));
+        cJSON_AddItemToObject(jsonTexNode, "wrapmodev", cJSON_CreateString(wrapModeVStr));
+        static std::map<FbxTexture::EBlendMode, const char*> blendModeToStr = {
+            { FbxTexture::eTranslucent, "translucent" },
+            { FbxTexture::eAdditive, "additive" },
+            { FbxTexture::eModulate, "modulate" },
+            { FbxTexture::eModulate2, "modulate2" },
+            { FbxTexture::eOver, "over" }
+        };
+        const FbxTexture::EBlendMode blendMode = fbxTex->GetBlendMode();
+        const char* blendModeStr = "invalid";
+        if (blendModeToStr.find(blendMode) != blendModeToStr.end()) {
+            blendModeStr = blendModeToStr[blendMode];
+        };
+        cJSON_AddItemToObject(jsonTexNode, "blendmode", cJSON_CreateString(blendModeStr));
+        
+        cJSON_AddItemToObject(jsonTexNode, "alpha", cJSON_CreateNumber(fbxTex->Alpha.Get()));
+        cJSON_AddItemToObject(jsonTexNode, "translation", cJSON_CreateDoubleArray(fbxTex->Translation.Get().mData, 3));
+        cJSON_AddItemToObject(jsonTexNode, "rotation", cJSON_CreateDoubleArray(fbxTex->Rotation.Get().mData, 3));
+        cJSON_AddItemToObject(jsonTexNode, "scaling", cJSON_CreateDoubleArray(fbxTex->Scaling.Get().mData, 3));
+        cJSON_AddItemToObject(jsonTexNode, "rotationpivot", cJSON_CreateDoubleArray(fbxTex->RotationPivot.Get().mData, 3));
+        cJSON_AddItemToObject(jsonTexNode, "scalingpivot", cJSON_CreateDoubleArray(fbxTex->ScalingPivot.Get().mData, 3));
+        cJSON_AddItemToObject(jsonTexNode, "uvset", cJSON_CreateString(fbxTex->UVSet.Get().Buffer()));
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -180,6 +324,63 @@ FBXDumper::DumpHierarchy(FbxManager* fbxManager, FbxScene* fbxScene, FbxNode* fb
             
             // recurse into children
             DumpHierarchy(fbxManager, fbxScene, fbxChildNode, jsonChild);
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+void
+FBXDumper::DumpConnections(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* jsonNode) {
+    assert(fbxManager && fbxScene && jsonNode);
+    
+    cJSON* jsonConnNode = cJSON_CreateObject();
+    cJSON_AddItemToObject(jsonNode, "connections", jsonConnNode);
+    
+    // dump material -> texture connections
+    DumpMaterialTextureConnections(fbxManager, fbxScene, jsonConnNode);
+}
+
+//------------------------------------------------------------------------------
+void
+FBXDumper::DumpPropertyConnection(const FbxPropertyT<FbxDouble3>& prop, const FbxCriteria& criteria, const char* name, cJSON* jsonNode) {
+    FbxObject* srcObj = prop.GetSrcObject(criteria);
+    if (srcObj) {
+        cJSON_AddItemToObject(jsonNode, name, cJSON_CreateString(srcObj->GetName()));
+    }
+}
+
+//------------------------------------------------------------------------------
+void
+FBXDumper::DumpMaterialTextureConnections(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* jsonNode) {
+    assert(fbxManager && fbxScene && jsonNode);
+    
+    cJSON* jsonMatTexNode = cJSON_CreateObject();
+    cJSON_AddItemToObject(jsonNode, "material_textures", jsonMatTexNode);
+    
+    FbxCriteria texCriteria = FbxCriteria::ObjectType(FbxTexture::ClassId);
+    const int numMaterials = fbxScene->GetMaterialCount();
+    for (int matIndex = 0; matIndex < numMaterials; matIndex++) {
+        FbxSurfaceMaterial* fbxMat = fbxScene->GetMaterial(matIndex);
+        
+        cJSON* jsonMatNode = cJSON_CreateObject();
+        cJSON_AddItemToObject(jsonMatTexNode, fbxMat->GetName(), jsonMatNode);
+        
+        if (fbxMat->GetClassId().Is(FbxSurfaceLambert::ClassId)) {
+            const FbxSurfaceLambert* lamb = (FbxSurfaceLambert*) fbxMat;
+            DumpPropertyConnection(lamb->Emissive, texCriteria, "emissive", jsonMatNode);
+            DumpPropertyConnection(lamb->Ambient, texCriteria, "ambient", jsonMatNode);
+            DumpPropertyConnection(lamb->Diffuse, texCriteria, "diffuse", jsonMatNode);
+            DumpPropertyConnection(lamb->NormalMap, texCriteria, "normalmap", jsonMatNode);
+            DumpPropertyConnection(lamb->Bump, texCriteria, "bump", jsonMatNode);
+            DumpPropertyConnection(lamb->TransparentColor, texCriteria, "transparentcolor", jsonMatNode);
+            DumpPropertyConnection(lamb->DisplacementColor, texCriteria, "displacementcolor", jsonMatNode);
+            DumpPropertyConnection(lamb->VectorDisplacementColor, texCriteria, "vectordisplacementcolor", jsonMatNode);
+        }
+        if (fbxMat->GetClassId().Is(FbxSurfacePhong::ClassId)) {
+            const FbxSurfacePhong* phong = (FbxSurfacePhong*) fbxMat;
+            DumpPropertyConnection(phong->Specular, texCriteria, "specular", jsonMatNode);
+            DumpPropertyConnection(phong->Shininess, texCriteria, "shininess", jsonMatNode);
+            DumpPropertyConnection(phong->Reflection, texCriteria, "reflection", jsonMatNode);
         }
     }
 }

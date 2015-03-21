@@ -17,10 +17,18 @@ public:
 private:
     /// dump file meta
     static void DumpMetaData(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
+    /// dump textures
+    static void DumpTextures(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
     /// dump materials
     static void DumpMaterials(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
     /// dump node hierarcht
-    static void DumpHierarchy(FbxManager* fbxManager, FbxScene* fbxScene, FbxNode* fbxNode, cJSON* jsonNode);
+    static void DumpHierarchy(FbxManager* fbxManager, FbxScene* fbxScene, FbxNode* fbxNode, cJSON* json);
+    /// dump connections
+    static void DumpConnections(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
+    /// dump material => texture connections
+    static void DumpMaterialTextureConnections(FbxManager* fbxManager, FbxScene* fbxScnee, cJSON* json);
+    /// check and dump an FbxDouble3 property connection
+    static void DumpPropertyConnection(const FbxPropertyT<FbxDouble3>& prop, const FbxCriteria& crit, const char* name, cJSON* jsonNode);
 };
 
 } // namespace FBXC
