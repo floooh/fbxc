@@ -6,3 +6,4 @@ fips_begin_lib(fbxc_lib)
     )
     fips_libs(cjson)
 fips_end_lib()
+

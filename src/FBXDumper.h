@@ -6,6 +6,7 @@
 */
 #include <fbxsdk.h>
 #include <string>
+#include <vector>
 #include "cJSON.h"
 
 namespace FBXC {
@@ -15,20 +16,23 @@ public:
     /// main method, dump everything to stdout
     static void Dump(FbxManager* fbxManager, FbxScene* fbxScene, const std::string& fbxPath);
 private:
+    /// get the unique-ids of node attributes by type
+    static std::vector<FbxUInt64> GetNodeAttributeUniqueIds(FbxNode* fbxNode, FbxNodeAttribute::EType type);
     /// dump file meta
-    static void DumpMetaData(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
+    static void DumpMetaData(FbxScene* fbxScene, cJSON* json);
     /// dump textures
-    static void DumpTextures(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
+    static void DumpTextures(FbxScene* fbxScene, cJSON* json);
+    /// check and dump an FbxDouble3 property connection, return true if connection exists
+    static bool DumpPropertyConnection(const FbxPropertyT<FbxDouble3>& prop, const FbxCriteria& crit, const char* name, cJSON* jsonNode);
     /// dump materials
-    static void DumpMaterials(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
-    /// dump node hierarcht
-    static void DumpHierarchy(FbxManager* fbxManager, FbxScene* fbxScene, FbxNode* fbxNode, cJSON* json);
-    /// dump connections
-    static void DumpConnections(FbxManager* fbxManager, FbxScene* fbxScene, cJSON* json);
-    /// dump material => texture connections
-    static void DumpMaterialTextureConnections(FbxManager* fbxManager, FbxScene* fbxScnee, cJSON* json);
-    /// check and dump an FbxDouble3 property connection
-    static void DumpPropertyConnection(const FbxPropertyT<FbxDouble3>& prop, const FbxCriteria& crit, const char* name, cJSON* jsonNode);
+    static void DumpMaterials(FbxScene* fbxScene, cJSON* json);
+    /// dump geometries
+    static void DumpMeshes(FbxScene* fbxScene, cJSON* json);
+    /// dump node hierarchy
+    static void DumpNodes(FbxScene* fbxScene, FbxNode* fbxNode, cJSON* json);
+    /// dump user properties of an FbxObject
+    static void DumpUserProperties(FbxObject* fbxObject, cJSON* json);
+    
 };
 
 } // namespace FBXC

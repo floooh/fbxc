@@ -23,6 +23,12 @@ fips_begin_app(fbxc cmdline)
     fips_libs(${FBXSDK_LIBRARY})
 fips_end_app()
 
+# disable some warnings from the FBX SDK headers
+if (FIPS_CLANG)
+    set_target_properties(fbxc_lib PROPERTIES COMPILE_FLAGS "-Wno-missing-field-initializers")
+    set_target_properties(fbxc PROPERTIES COMPILE_FLAGS "-Wno-missing-field-initializers")
+endif()
+
 if (NOT FIPS_IMPORT)
     fips_finish()
 endif()
