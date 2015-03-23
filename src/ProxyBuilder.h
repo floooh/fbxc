@@ -16,6 +16,8 @@ public:
     static void Build(FbxScene* fbxScene, const std::string& fbxPath, ProxyScene& outProxyScene);
     
 private:
+    /// get unique ids of an FbxNode's node attribute by type
+    static std::vector<Value> GetNodeAttributeUniqueIds(FbxNode* fbxNode, FbxNodeAttribute::EType type);
     /// build a property connection (e.g. when a texture is attached to a material property)
     static bool BuildPropertyConnection(const FbxPropertyT<FbxDouble3>& prop, const FbxCriteria& criteria, const char* name, PropertyMap& props);
     /// build user properties
@@ -28,6 +30,8 @@ private:
     static void BuildMaterials(FbxScene* fbxScene, ProxyScene& scene);
     /// build mesh array
     static void BuildMeshes(FbxScene* fbxScene, ProxyScene& scene);
+    /// build node hierarchy
+    static void BuildNodes(FbxScene* fbxScene, ProxyScene& scene, FbxNode* fbxNode, ProxyNode* node);
 };
 
 } // namespace FBXC

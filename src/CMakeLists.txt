@@ -3,7 +3,6 @@ fips_begin_lib(fbxc_lib)
         Log.h
         Main.cc Main.h
         FBX.cc FBX.h
-        FBXDumper.cc FBXDumper.h
         Value.cc Value.h
         PropertyMap.cc PropertyMap.h
         ProxyObject.h

@@ -15,6 +15,7 @@ JsonDumper::Dump(const ProxyScene& scene) {
     DumpTextures(scene, jsonRoot);
     DumpMaterials(scene, jsonRoot);
     DumpMeshes(scene, jsonRoot);
+    DumpNodes(scene, jsonRoot, nullptr);
     
     char* rawStr = cJSON_Print(jsonRoot);
     std::string jsonStr(rawStr);
@@ -164,6 +165,31 @@ JsonDumper::DumpMeshes(const ProxyScene& scene, cJSON* jsonNode) {
         cJSON_AddItemToArray(jsonMeshes, jsonMesh);
         DumpProperties(mesh.Properties, jsonMesh);
         DumpUserProperties(mesh, jsonMesh);
+    }
+}
+
+//------------------------------------------------------------------------------
+void
+JsonDumper::DumpNodes(const ProxyScene& scene, cJSON* jsonNode, const ProxyNode* node) {
+    if (nullptr == node) {
+        cJSON* jsonRoot = cJSON_CreateObject();
+        cJSON_AddItemToObject(jsonNode, "nodes", jsonRoot);
+        jsonNode = jsonRoot;
+        node = &scene.Nodes;
+    }
+    
+    DumpProperties(node->Properties, jsonNode);
+    DumpUserProperties(*node, jsonNode);
+    
+    // recurse into children
+    if (node->Children.size() > 0) {
+        cJSON* jsonChildArray = cJSON_CreateArray();
+        cJSON_AddItemToObject(jsonNode, "children", jsonChildArray);
+        for (const auto& childNode : node->Children) {
+            cJSON* jsonChildNode = cJSON_CreateObject();
+            cJSON_AddItemToArray(jsonChildArray, jsonChildNode);
+            DumpNodes(scene, jsonChildNode, &childNode);
+        }
     }
 }
 

@@ -3,7 +3,6 @@
 //------------------------------------------------------------------------------
 #include "FBX.h"
 #include "Log.h"
-#include "FBXDumper.h"
 #include "ProxyBuilder.h"
 #include "JsonDumper.h"
 

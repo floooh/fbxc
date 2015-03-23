@@ -17,6 +17,7 @@ ProxyBuilder::Build(FbxScene* fbxScene, const std::string& fbxPath, ProxyScene& 
     BuildTextures(fbxScene, outProxyScene);
     BuildMaterials(fbxScene, outProxyScene);
     BuildMeshes(fbxScene, outProxyScene);
+    BuildNodes(fbxScene, outProxyScene, nullptr, nullptr);
 }
 
 //------------------------------------------------------------------------------
@@ -321,6 +322,7 @@ ProxyBuilder::BuildMeshes(FbxScene* fbxScene, ProxyScene& scene) {
             
             scene.Meshes.emplace_back();
             ProxyObject& mesh = scene.Meshes.back();
+            mesh.Object = fbxMesh;
             
             // NOTE: meshes don't have names, so use unique id as identifier
             mesh.Properties.Add("id", fbxMesh->GetUniqueID());
@@ -348,6 +350,54 @@ ProxyBuilder::BuildMeshes(FbxScene* fbxScene, ProxyScene& scene) {
                 mesh.Properties.Add("uvsets", uvSets);
             }
             BuildUserProperties(fbxMesh, mesh);
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+std::vector<Value>
+ProxyBuilder::GetNodeAttributeUniqueIds(FbxNode* fbxNode, FbxNodeAttribute::EType type) {
+    std::vector<Value> result;
+    const int numNodeAttrs = fbxNode->GetNodeAttributeCount();
+    for (int i = 0; i < numNodeAttrs; i++) {
+        FbxNodeAttribute* fbxNodeAttr = fbxNode->GetNodeAttributeByIndex(i);
+        if (fbxNodeAttr->GetAttributeType() == type) {
+            Value val;
+            val.Set(fbxNodeAttr->GetUniqueID());
+            result.push_back(val);
+        }
+    }
+    return result;
+}
+
+//------------------------------------------------------------------------------
+void
+ProxyBuilder::BuildNodes(FbxScene* fbxScene, ProxyScene& scene, FbxNode* fbxNode, ProxyNode* node) {
+    
+    // root node?
+    if (nullptr == fbxNode) {
+        fbxNode = fbxScene->GetRootNode();
+        node = &scene.Nodes;
+    }
+    
+    node->Properties.Add("name", fbxNode->GetName());
+    node->Properties.Add("id", fbxNode->GetUniqueID());
+    node->Properties.Add("visible", fbxNode->GetVisibility());
+    
+    // meshes connected to this node
+    std::vector<Value> meshUniqueIds = GetNodeAttributeUniqueIds(fbxNode, FbxNodeAttribute::eMesh);
+    if (meshUniqueIds.size() > 0) {
+        node->Properties.Add("meshes", meshUniqueIds);
+    }
+    BuildUserProperties(fbxNode, *node);
+    
+    // recurse into children
+    if (fbxNode->GetChildCount() > 0) {
+        for (int i = 0; i < fbxNode->GetChildCount(); i++) {
+            FbxNode* fbxChildNode = fbxNode->GetChild(i);
+            node->Children.emplace_back();
+            ProxyNode* childNode = &node->Children.back();
+            BuildNodes(fbxScene, scene, fbxChildNode, childNode);
         }
     }
 }

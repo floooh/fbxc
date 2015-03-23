@@ -25,6 +25,8 @@ private:
     static void DumpMaterials(const ProxyScene& scene, cJSON* jsonNode);
     /// dump meshes in scene
     static void DumpMeshes(const ProxyScene& scene, cJSON* jsonNode);
+    /// dump node hierarchy
+    static void DumpNodes(const ProxyScene& scene, cJSON* jsonNode, const ProxyNode* node);
 };
 
 } // namespace FBXC
