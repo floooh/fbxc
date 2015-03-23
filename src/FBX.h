@@ -6,6 +6,7 @@
 */
 #include <fbxsdk.h>
 #include <string>
+#include "ProxyScene.h"
 
 namespace FBXC {
 
@@ -35,6 +36,7 @@ private:
     FbxManager* fbxManager = nullptr;
     FbxIOSettings* fbxIoSettings = nullptr;
     FbxScene* fbxScene = nullptr;
+    ProxyScene proxyScene;
 };
 
 //------------------------------------------------------------------------------

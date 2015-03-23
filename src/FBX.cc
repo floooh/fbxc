@@ -4,6 +4,8 @@
 #include "FBX.h"
 #include "Log.h"
 #include "FBXDumper.h"
+#include "ProxyBuilder.h"
+#include "JsonDumper.h"
 
 namespace FBXC {
 
@@ -77,14 +79,16 @@ FBX::Load(const std::string& fbxPath) {
         Log::Fatal("importing failed with '%s'\n", fbxPath.c_str(), error.Buffer());
     }
     fbxImporter->Destroy();
+    
+    // build proxy scene
+    ProxyBuilder::Build(this->fbxScene, fbxPath, this->proxyScene);
 }
 
 //------------------------------------------------------------------------------
 void
 FBX::Dump() {
-    assert(nullptr != this->fbxManager);
-    assert(nullptr != this->fbxScene);
-    FBXDumper::Dump(this->fbxManager, this->fbxScene, this->filePath);
+    std::string jsonString = JsonDumper::Dump(this->proxyScene);
+    Log::Info("%s\n", jsonString.c_str());
 }
 
 } // namespace FBXC

@@ -3,6 +3,7 @@
 //------------------------------------------------------------------------------
 #include "Main.h"
 #include "Log.h"
+#include "cpptoml.h"
 #include <iostream>
 
 namespace FBXC {
