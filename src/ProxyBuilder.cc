@@ -326,7 +326,27 @@ ProxyBuilder::BuildMeshes(FbxScene* fbxScene, ProxyScene& scene) {
             mesh.Properties.Add("id", fbxMesh->GetUniqueID());
             mesh.Properties.Add("numpoints", fbxMesh->GetControlPointsCount());
             mesh.Properties.Add("numpolygons", fbxMesh->GetPolygonCount());
-
+            
+            assert(fbxMesh->GetLayerCount() > 0);
+            FbxLayer* fbxLayer = fbxMesh->GetLayer(0);
+            mesh.Properties.Add("hasnormals", fbxLayer->GetNormals() != nullptr);
+            mesh.Properties.Add("hastangents", fbxLayer->GetTangents() != nullptr);
+            mesh.Properties.Add("hasbinormals", fbxLayer->GetBinormals() != nullptr);
+            mesh.Properties.Add("hasmaterials", fbxLayer->GetMaterials() != nullptr);
+            mesh.Properties.Add("haspolygongroups", fbxLayer->GetPolygonGroups() != nullptr);
+            mesh.Properties.Add("hasvertexcolor", fbxLayer->GetVertexColors() != nullptr);
+            mesh.Properties.Add("hasuserdata", fbxLayer->GetUserData() != nullptr);
+            mesh.Properties.Add("hasvisibility", fbxLayer->GetVisibility() != nullptr);
+            if (fbxLayer->GetUVSetCount() > 0) {
+                std::vector<Value> uvSets;
+                FbxArray<const FbxLayerElementUV*> fbxUvSets = fbxLayer->GetUVSets();
+                for (int i = 0; i < fbxUvSets.Size(); i++) {
+                    Value val;
+                    val.Set(fbxUvSets[i]->GetName());
+                    uvSets.push_back(val);
+                }
+                mesh.Properties.Add("uvsets", uvSets);
+            }
             BuildUserProperties(fbxMesh, mesh);
         }
     }

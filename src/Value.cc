@@ -91,6 +91,13 @@ Value::Set(std::string str) {
 }
 
 //------------------------------------------------------------------------------
+template<> void
+Value::Set(std::vector<Value> valArray) {
+    this->type = Array;
+    this->arrayValue = valArray;
+}
+
+//------------------------------------------------------------------------------
 template<> bool
 Value::Get() const {
     assert(Bool == this->type);

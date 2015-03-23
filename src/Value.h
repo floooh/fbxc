@@ -6,6 +6,7 @@
 */
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace FBXC {
 
@@ -21,7 +22,8 @@ public:
         Float2,         // 2D floating point vector
         Float3,         // 3D floating point vector
         Float4,         // 4D floating point vector
-        String,
+        String,         // simple string
+        Array,          // an array of values
     };
 
     /// default constructor
@@ -40,6 +42,7 @@ public:
         std::uint64_t idValue;
         double floatValues[4];
     };
+    std::vector<Value> arrayValue;
 };
 
 } // namespace FBXC

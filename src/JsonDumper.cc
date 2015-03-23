@@ -63,6 +63,54 @@ JsonDumper::DumpProperties(const PropertyMap& props, cJSON* jsonNode) {
             case Value::String:
                 cJSON_AddItemToObject(jsonNode, key.c_str(), cJSON_CreateString(value.strValue.c_str()));
                 break;
+                
+            case Value::Array:
+                {
+                    cJSON* jsonArray = cJSON_CreateArray();
+                    cJSON_AddItemToObject(jsonNode, key.c_str(), jsonArray);
+                    for (const auto& arrayVal : value.arrayValue) {
+                        switch (arrayVal.type) {
+                            case Value::Bool:
+                                cJSON_AddItemToArray(jsonArray, cJSON_CreateBool(arrayVal.Get<bool>()));
+                                break;
+                            case Value::Id:
+                                cJSON_AddItemToArray(jsonArray, cJSON_CreateNumber(arrayVal.Get<std::uint64_t>()));
+                                break;
+                            case Value::Int:
+                                cJSON_AddItemToArray(jsonArray, cJSON_CreateNumber(arrayVal.Get<std::int32_t>()));
+                                break;
+                            case Value::Float:
+                                cJSON_AddItemToArray(jsonArray, cJSON_CreateNumber(arrayVal.Get<double>()));
+                                break;
+                            case Value::Float2:
+                                {
+                                    FbxDouble2 v = arrayVal.Get<FbxDouble2>();
+                                    cJSON_AddItemToArray(jsonArray, cJSON_CreateDoubleArray(v.mData, 2));
+                                }
+                                break;
+                            case Value::Float3:
+                                {
+                                    FbxDouble3 v = arrayVal.Get<FbxDouble3>();
+                                    cJSON_AddItemToArray(jsonArray, cJSON_CreateDoubleArray(v.mData, 3));
+                                }
+                                break;
+                            case Value::Float4:
+                                {
+                                    FbxDouble4 v = arrayVal.Get<FbxDouble4>();
+                                    cJSON_AddItemToArray(jsonArray, cJSON_CreateDoubleArray(v.mData, 4));
+                                }
+                                break;
+                            case Value::String:
+                                cJSON_AddItemToArray(jsonArray, cJSON_CreateString(arrayVal.strValue.c_str()));
+                                break;
+                            default:
+                                // nested array type not supported
+                                break;
+                        }
+                    }
+                }
+                break;
+                
             default:
                 // void type, do nothing
                 break;
