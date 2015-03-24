@@ -24,9 +24,9 @@ fips_add_subdirectory(src)
 fips_begin_app(fbxc cmdline)
     fips_files(main_stub.cc)
     fips_deps(fbxc_lib)    
-    #    fips_libs(${FBXSDK_LIBRARY})
+    fips_libs_debug(${FBXSDK_LIBRARY_DEBUG})
+    fips_libs_release(${FBXSDK_LIBRARY})
 fips_end_app()
-target_link_libraries(fbxc debug ${FBXSDK_LIBRARY_DEBUG} optimized ${FBXSDK_LIBRARY})
 
 # disable some warnings from the FBX SDK headers
 if (FIPS_CLANG)
